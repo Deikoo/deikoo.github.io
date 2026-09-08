@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PlaneCollector | Spot it. Capture it. Collect it.</title>
+  <meta name="description" content="PlaneCollector turns real-world plane spotting into a collection game. Capture aircraft, identify them with live data, and build your own hangar.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0b1220;
+      --night: #0e1729;
+      --deep: #111f3b;
+      --mist: #edf4ff;
+      --muted: #a9bddb;
+      --accent: #19b4ff;
+      --accent-2: #77f0ff;
+      --card: rgba(17, 31, 59, 0.72);
+      --line: rgba(130, 185, 255, 0.22);
+      --ok: #56e9a8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(145deg, #08101d 0%, #0d1c35 45%, #10264a 100%);
+      color: var(--mist);
+      font-family: "Instrument Sans", "Segoe UI", sans-serif;
+      min-height: 100%;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    body::before {
+      width: 460px;
+      height: 460px;
+      top: -140px;
+      right: -110px;
+      background: #0fb9ff;
+    }
+
+    body::after {
+      width: 340px;
+      height: 340px;
+      bottom: -120px;
+      left: -90px;
+      background: #5f87ff;
+    }
+
+    .wrap {
+      width: min(1120px, 92vw);
+      margin: 0 auto;
+      padding: 28px 0 72px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 26px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      font-size: 20px;
+    }
+
+    .radar-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--ok);
+      box-shadow: 0 0 0 0 rgba(86, 233, 168, 0.65);
+      animation: ping 2.2s infinite;
+    }
+
+    .links {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      border: 1px solid transparent;
+      padding: 8px 10px;
+      border-radius: 10px;
+      transition: 160ms ease;
+    }
+
+    .links a:hover {
+      color: var(--mist);
+      border-color: var(--line);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(17, 31, 59, 0.9), rgba(9, 18, 35, 0.82));
+      border-radius: 24px;
+      padding: clamp(24px, 5vw, 48px);
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 30px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -120px auto;
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(25, 180, 255, 0.35) 0%, rgba(25, 180, 255, 0) 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 12px;
+      color: var(--accent-2);
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 14px 0 16px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(34px, 5.6vw, 64px);
+      line-height: 1.04;
+      letter-spacing: -1.2px;
+      max-width: 12ch;
+    }
+
+    .lead {
+      margin: 0;
+      max-width: 53ch;
+      color: #c7d7f2;
+      font-size: clamp(16px, 2vw, 19px);
+      line-height: 1.55;
+    }
+
+    .cta-row {
+      margin-top: 26px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      transition: transform 160ms ease, filter 160ms ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .btn.primary {
+      color: #051229;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    }
+
+    .btn.ghost {
+      color: var(--mist);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .stats {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(5, 14, 28, 0.55);
+      padding: 14px 14px 12px;
+    }
+
+    .stat .k {
+      margin: 0;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 24px;
+      color: var(--accent-2);
+    }
+
+    .stat .v {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .grid {
+      margin-top: 26px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+      padding: 16px;
+    }
+
+    .card h3 {
+      margin: 2px 0 8px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 17px;
+      letter-spacing: -0.2px;
+    }
+
+    .card p {
+      margin: 0;
+      color: #c8d7f1;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .foot {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .foot a {
+      color: var(--mist);
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(237, 244, 255, 0.35);
+    }
+
+    .foot a:hover {
+      border-bottom-color: rgba(237, 244, 255, 0.8);
+    }
+
+    @keyframes ping {
+      0% {
+        box-shadow: 0 0 0 0 rgba(86, 233, 168, 0.55);
+      }
+      80% {
+        box-shadow: 0 0 0 12px rgba(86, 233, 168, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(86, 233, 168, 0);
+      }
+    }
+
+    @media (max-width: 920px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 740px) {
+      .wrap {
+        padding-top: 18px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <span class="radar-dot" aria-hidden="true"></span>
+        <span>PlaneCollector</span>
+      </div>
+      <nav class="links" aria-label="Site links">
+        <a href="/planecollector-privacy/">Privacy</a>
+        <a href="/app-ads.txt">app-ads.txt</a>
+        <a href="https://apps.apple.com/app/id6800778227" rel="noopener">App Store</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <div class="eyebrow">Live Flight Data + On-Device AI</div>
+          <h1 id="hero-title">Spot aircraft in the real world and build your own hangar.</h1>
+          <p class="lead">
+            PlaneCollector turns plane spotting into a collection game. Capture real aircraft with your camera,
+            identify them with live data, and track your progress with score, rarity and streaks.
+          </p>
+          <div class="cta-row">
+            <a class="btn primary" href="https://apps.apple.com/app/id6800778227" rel="noopener">Download on App Store</a>
+            <a class="btn ghost" href="/planecollector-privacy/">Read Privacy Policy</a>
+          </div>
+        </div>
+
+        <aside class="stats" aria-label="Highlights">
+          <div class="stat">
+            <p class="k">On-device AI</p>
+            <p class="v">Detection runs directly on your phone.</p>
+          </div>
+          <div class="stat">
+            <p class="k">Live Aircraft</p>
+            <p class="v">Identify candidates using live flight signals.</p>
+          </div>
+          <div class="stat">
+            <p class="k">Personal Hangar</p>
+            <p class="v">Collect, track rarity, and keep your own history.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="grid" aria-label="Feature summary">
+        <article class="card">
+          <h3>Capture</h3>
+          <p>Snap real aircraft and save them to your collection with route and flight context.</p>
+        </article>
+        <article class="card">
+          <h3>Identify</h3>
+          <p>Combine camera detection and live aircraft data for confident matching.</p>
+        </article>
+        <article class="card">
+          <h3>Compete</h3>
+          <p>Grow your score, improve streaks, and climb the leaderboard over time.</p>
+        </article>
+      </section>
+
+      <div class="foot">
+        <span>Developer website for PlaneCollector</span>
+        <a href="/app-ads.txt">Authorized Digital Sellers</a>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
